@@ -75,24 +75,57 @@ class CrudCommand extends Command
         $modelNamespace = ($this->option('model-namespace')) ? trim($this->option('model-namespace')) . '\\' : '';
 
         $fields = rtrim($this->option('fields'), ';');
-
-        if ($this->option('fields_from_file')) {
-            $fields = $this->processJSONFields($this->option('fields_from_file'));
-        }
-
-        $primaryKey = $this->option('pk');
+		$primaryKey = $this->option('pk');
         $viewPath = $this->option('view-path');
 
         $foreignKeys = $this->option('foreign-keys');
-
+		$validations = trim($this->option('validations'));
+		$relationships = $this->option('relationships');
+		
         if ($this->option('fields_from_file')) {
-            $foreignKeys = $this->processJSONForeignKeys($this->option('fields_from_file'));
+            $fields = $this->processJSONFields($this->option('fields_from_file'));
+			$foreignKeys = $this->processJSONForeignKeys($this->option('fields_from_file'));
+			$validations = $this->processJSONValidations($this->option('fields_from_file'));
+			$relationships = $this->processJSONRelationships($this->option('fields_from_file'));
+			
+			$jsonModelName=$this->processJSONAditionalParams($this->option('fields_from_file'),'model_name');
+			if($jsonModelName!==''){
+				$modelName=$jsonModelName;
+			}
+			$jsonPerPage=$this->processJSONAditionalParams($this->option('fields_from_file'),'pagination');
+			if($jsonPerPage!==''){
+				$perPage=intval($jsonPerPage);
+			}
+			$jsonTable=$this->processJSONAditionalParams($this->option('fields_from_file'),'table');
+			if($jsonTable!==''){
+				$tableName=$jsonTable;
+			}
+			$jsonSoft_deletes=$this->processJSONAditionalParams($this->option('fields_from_file'),'soft_deletes');
+			if($jsonSoft_deletes!==''){
+				$softDeletes=$jsonSoft_deletes;
+			}
+			// $jsonjsonMigrationName=$this->processJSONAditionalParams($this->option('fields_from_file'),$modelName);
+			// if($jsonModelName!==''){
+				// $modelName=jsonModelName;
+			// }
+			$jsonRouteGroup=$this->processJSONAditionalParams($this->option('fields_from_file'),'route_group');
+			if($jsonRouteGroup!==''){
+				$routeGroup=$jsonRouteGroup;
+			}
+			$jsonControllerNamespace=$this->processJSONAditionalParams($this->option('fields_from_file'),'controller_namespace');
+			if($jsonControllerNamespace!==''){
+				$controllerNamespace=$jsonControllerNamespace;
+			}
+			// $jsonModelNamespace=$this->processJSONAditionalParams($this->option('fields_from_file'),$modelName);
+			// if($jsonModelNamespace!==''){
+				// $modelNamespace=$jsonModelNamespace;
+			// }
+			$jsonModelName=$this->processJSONAditionalParams($this->option('fields_from_file'),'model_namespace');
+			if($jsonModelName!==''){
+				$modelNamespace=$jsonModelName;
+			}			
         }
 
-        $validations = trim($this->option('validations'));
-        if ($this->option('fields_from_file')) {
-            $validations = $this->processJSONValidations($this->option('fields_from_file'));
-        }
 
         $fieldsArray = explode(';', $fields);
         $fillableArray = [];
@@ -115,11 +148,7 @@ class CrudCommand extends Command
         $localize = $this->option('localize');
         $locales = $this->option('locales');
 
-        $indexes = $this->option('indexes');
-        $relationships = $this->option('relationships');
-        if ($this->option('fields_from_file')) {
-            $relationships = $this->processJSONRelationships($this->option('fields_from_file'));
-        }
+        $indexes = $this->option('indexes');        
 
         $formHelper = $this->option('form-helper');
         $softDeletes = $this->option('soft-deletes');
@@ -165,6 +194,29 @@ class CrudCommand extends Command
     protected function addRoutes()
     {
         return ["Route::resource('" . $this->routeName . "', '" . $this->controller . "');"];
+    }
+	
+	/**
+	 * Carlos Uh
+     * Process the JSON aditional params.
+     *
+     * @param  string $file
+     *
+     * @return string
+     */
+    protected function processJSONAditionalParams($file, $param_name)
+    {
+        $json = File::get($file);
+        $fields = json_decode($json);
+
+        $fieldsString = '';
+		if(property_exists($fields,$param_name)){
+			$fieldsString = $fields->{$param_name};
+		}
+	
+        $fieldsString = rtrim($fieldsString, ';');
+
+        return $fieldsString;
     }
 
     /**
